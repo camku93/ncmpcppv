@@ -248,10 +248,27 @@ conf+=(-c "$tmp/ncmpcppv")
 
 ub_pid=
 FIFO_UEBERZUG=
-if [ -n "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${SSH_TTY:-}" ] && have ueberzug; then
+ub='' out=${NCMPCPPV_OUTPUT:-}
+if have ueberzugpp; then
+	if [ -z "$out" ]; then
+		if [ -n "${KITTY_WINDOW_ID:-}" ] || [ -n "${KONSOLE_VERSION:-}" ] || [ -n "${WEZTERM_PANE:-}" ] || [ "${TERM:-}" = xterm-ghostty ]; then
+			out=kitty
+		else
+			case ${TERM:-} in foot*) out=sixel ;; esac
+		fi
+	fi
+	ub="ueberzugpp layer --silent --no-cache${out:+ -o $out}"
+elif have ueberzug; then
+	ub="ueberzug layer --silent --parser json"
+fi
+case $out in
+kitty | sixel) usable=1 ;;
+*) [ -n "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ -z "${SSH_TTY:-}" ] && usable=1 ;;
+esac
+if [ -n "${usable:-}" ] && [ -n "$ub" ]; then
 	FIFO_UEBERZUG="$tmp/ueberzug"
 	if mkfifo "$FIFO_UEBERZUG"; then
-		ueberzug layer --silent --parser json < "$FIFO_UEBERZUG" &
+		$ub < "$FIFO_UEBERZUG" &
 		ub_pid=$!
 		exec 3>"$FIFO_UEBERZUG"
 	else
