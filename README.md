@@ -10,9 +10,7 @@ cd ncmpcppv
 ./install.sh
 ```
 
-The installer works on [Arch Linux](https://archlinux.org), [Debian](https://www.debian.org), [Ubuntu](https://ubuntu.com) and their derivatives. It will install [ncmpcpp](https://github.com/ncmpcpp/ncmpcpp), [tmux](https://github.com/tmux/tmux), [mpc](https://www.musicpd.org/clients/mpc/), [ueberzug](https://github.com/seebye/ueberzug) and the extras, then ncmpcppv itself.
-
-Anything your distribution doesn't have is skipped and listed at the end.
+The installer works on [Arch Linux](https://archlinux.org), [Debian](https://www.debian.org), [Ubuntu](https://ubuntu.com) and their derivatives. It will install [ncmpcpp](https://github.com/ncmpcpp/ncmpcpp), [tmux](https://github.com/tmux/tmux), [mpc](https://www.musicpd.org/clients/mpc/), [ueberzug](https://github.com/seebye/ueberzug) and the extra dependencies, then ncmpcppv.
 
 You also need a working [MPD](https://www.musicpd.org) setup. ncmpcppv doesn't install or configure MPD.
 
@@ -26,7 +24,7 @@ Install [ncmpcpp](https://github.com/ncmpcpp/ncmpcpp), [tmux](https://github.com
 | [chafa](https://hpjansson.org/chafa/) | chafa | chafa | album art without X11 |
 | [ffmpeg](https://ffmpeg.org) | ffmpeg | ffmpeg | album art with MPD older than 0.22 |
 
-Then install ncmpcppv itself:
+Then install ncmpcppv:
 
 ```
 sudo make install
