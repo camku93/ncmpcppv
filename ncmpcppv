@@ -82,6 +82,44 @@ is_image() {
 	return 1
 }
 
+mpd_conf() {
+	local f
+	for f in "${XDG_CONFIG_HOME:-$HOME/.config}/mpd/mpd.conf" "$HOME/.mpdconf" "$HOME/.mpd/mpd.conf" /etc/mpd.conf; do
+		[ -r "$f" ] && { printf '%s\n' "$f"; return; }
+	done
+}
+
+cava_feed() {
+	local conf skip f
+	conf=$(mpd_conf)
+	[ -n "$conf" ] || return
+	for f in "$HOME/.config/ncmpcpp/config" "$HOME/.ncmpcpp/config"; do
+		[ -f "$f" ] || continue
+		skip=$(sed -n 's/^[[:space:]]*visualizer_data_source[[:space:]]*=[[:space:]]*//p' "$f" | tail -n 1)
+		skip=${skip#\"} skip=${skip%\"}
+	done
+	awk -v skip="$skip" '
+	/^[[:space:]]*audio_output/ { inb = 1; t = n = p = fm = ""; next }
+	inb && /^[[:space:]]*}/ {
+		if (t == "fifo" && p != "" && p != skip) print (tolower(n) ~ /cava/ ? 0 : 1) "|" p "|" fm
+		inb = 0; next
+	}
+	inb {
+		k = $1; v = $0
+		sub(/^[[:space:]]*[^[:space:]]+[[:space:]]+/, "", v)
+		sub(/[[:space:]]+$/, "", v); gsub(/^"|"$/, "", v)
+		if (k == "type") t = v; else if (k == "name") n = v; else if (k == "path") p = v; else if (k == "format") fm = v
+	}' "$conf" | sort | head -n 1 | cut -d'|' -f2-
+}
+
+draw_nofeed() {
+	local cols
+	cols=$(tput cols)
+	printf '\033[2J\033[H\033[38;2;139;154;184m'
+	printf 'Visualizer off. MPD needs a fifo output for it, see the ncmpcppv README.\n' | fold -s -w "$cols"
+	printf '\033[0m'
+}
+
 song_change() {
 	local file dir folder img
 	[ -n "${NCMPCPPV_HOOK:-}" ] && sh -c "$NCMPCPPV_HOOK" >/dev/null 2>&1 &
@@ -178,6 +216,7 @@ case ${1:-} in
 --pane)
 	case ${2:-} in
 	chafa) pane_loop draw_chafa ;;
+	nofeed) pane_loop draw_nofeed ;;
 	*) pane_loop draw_note ;;
 	esac
 	;;
@@ -240,7 +279,26 @@ tmux set-option -t "$session" status off >/dev/null
 art=$(tmux split-window -h -P -F '#{pane_id}' -t "$main" -l 28% "sleep infinity")
 tmux set-option -t "$session" @ncmpcppv-art "$art"
 vis=
-have cava && vis=$(tmux split-window -v -P -F '#{pane_id}' -t "$art" -l 30% "sh -c 'while :; do cava; sleep 1; done'")
+if have cava; then
+	feed=$(cava_feed)
+	if [ -n "$feed" ]; then
+		fmt=${feed#*|} fifo=${feed%%|*}
+		rate=${fmt%%:*} bits=${fmt#*:} bits=${bits%%:*}
+		case $rate in '' | *[!0-9]*) rate=44100 ;; esac
+		case $bits in '' | *[!0-9]*) bits=16 ;; esac
+		cconf="${XDG_CONFIG_HOME:-$HOME/.config}/cava/config"
+		if [ -f "$cconf" ]; then
+			awk '/^[[:space:]]*\[/ { skip = ($0 ~ /^[[:space:]]*\[input\]/) } !skip' "$cconf" > "$tmp/cava"
+		else
+			: > "$tmp/cava"
+		fi
+		printf '\n[input]\nmethod = fifo\nsource = %s\nsample_rate = %s\nsample_bits = %s\n' "$fifo" "$rate" "$bits" >> "$tmp/cava"
+		viscmd="sh -c 'while :; do cava -p $tmp/cava; sleep 1; done'"
+	else
+		viscmd="$(printf '%q' "$self") --pane nofeed"
+	fi
+	vis=$(tmux split-window -v -P -F '#{pane_id}' -t "$art" -l 30% "$viscmd")
+fi
 tmux select-pane -t "$main"
 for p in "$art" $vis; do
 	tmux select-pane -d -t "$p"

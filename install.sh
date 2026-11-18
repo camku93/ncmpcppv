@@ -1,4 +1,5 @@
 #!/bin/sh
+# Installs ncmpcppv and the programs it uses.
 #   ./install.sh              install everything, or pick the extras
 #   ./install.sh --yes        install everything without asking
 #   ./install.sh --uninstall  remove ncmpcppv (installed packages are kept)
@@ -120,6 +121,33 @@ done
 
 say "Installing ncmpcppv to $PREFIX"
 sudo install -Dm755 ncmpcppv "$PREFIX/bin/ncmpcppv" || die "Could not install ncmpcppv."
+
+mpdconf=
+for f in "${XDG_CONFIG_HOME:-$HOME/.config}/mpd/mpd.conf" "$HOME/.mpdconf" "$HOME/.mpd/mpd.conf"; do
+	[ -f "$f" ] && { mpdconf=$f; break; }
+done
+if have cava && [ -n "$mpdconf" ] && ! grep -q 'mpd-cava.fifo' "$mpdconf" && ! grep -q '^[[:space:]]*audio_output' "$mpdconf"; then
+	warn "Your MPD config has no audio_output, so MPD picks your speakers by itself."
+	warn "Adding the visualizer feed would stop that, so it was not added. See README.md."
+elif have cava && [ -n "$mpdconf" ] && ! grep -q 'mpd-cava.fifo' "$mpdconf"; then
+	if [ "${1:-}" = --yes ]; then
+		answer=y
+	else
+		printf '\nThe visualizer needs its own audio feed from MPD, so it only shows your music.\n'
+		printf 'Add it to %s? [Y/n] ' "$mpdconf"
+		answer=
+		read -r answer
+	fi
+	case $answer in
+	[Nn]*) warn "Skipped. The visualizer stays off until MPD has a fifo output, see README.md." ;;
+	*)
+		printf '\naudio_output {\n\ttype\t"fifo"\n\tname\t"cava"\n\tpath\t"/tmp/mpd-cava.fifo"\n\tformat\t"44100:16:2"\n}\n' >> "$mpdconf"
+		say "Added the visualizer feed to $mpdconf. Restart MPD to use it."
+		;;
+	esac
+elif have cava && [ -z "$mpdconf" ] && [ -f /etc/mpd.conf ] && ! grep -q 'mpd-cava.fifo' /etc/mpd.conf; then
+	warn "Your MPD uses /etc/mpd.conf. Add the visualizer feed there yourself, see README.md."
+fi
 
 say "Done. Run ncmpcppv to start ncmpcpp with album art."
 if [ -n "$missing" ]; then
