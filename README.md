@@ -28,4 +28,5 @@ Then install ncmpcppv:
 
 ```
 sudo make install
-```
+
+This will put ncmpcppv in `/usr/local/bin`, to uninstall: `sudo make uninstall`.
