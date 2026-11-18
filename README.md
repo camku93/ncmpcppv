@@ -1,6 +1,6 @@
 # ncmpcppv
 
-This is the build of [ncmpcpp](https://github.com/ncmpcpp/ncmpcpp) that ships with [Navi](https://navi-desktop.org), which includes album artwork and an audio visualizer.
+This is a wraper for [ncmpcpp](https://github.com/ncmpcpp/ncmpcpp) that ships with [Navi](https://navi-desktop.org), which displays album artwork and an audio visualizer inside of the player.
 
 ## Install
 
