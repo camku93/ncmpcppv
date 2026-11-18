@@ -204,8 +204,8 @@ case ${1:-} in
 	sleep 0.2
 	while :; do
 		start=$SECONDS
-		"$@"
-		[ $? -eq 1 ] && [ $((SECONDS - start)) -ge 2 ] || break
+		"$@" && break
+		[ $((SECONDS - start)) -ge 2 ] || break
 		while [ "$(tput cols)" -lt 30 ] || [ "$(tput lines)" -lt 10 ]; do
 			sleep 0.5
 		done
