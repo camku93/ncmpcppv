@@ -149,7 +149,7 @@ elif have cava && [ -z "$mpdconf" ] && [ -f /etc/mpd.conf ] && ! grep -q 'mpd-ca
 	warn "Your MPD uses /etc/mpd.conf. Add the visualizer feed there yourself, see README.md."
 fi
 
-say "Done. Run ncmpcppv to start ncmpcpp with album art."
+say "Installation finished. Enjoy!"
 if [ -n "$missing" ]; then
 	warn "Could not be installed:"
 	for p in $missing; do printf '   %s\n' "$p" >&2; done
@@ -160,5 +160,5 @@ elif [ -n "${WAYLAND_DISPLAY:-}" ]; then
 	warn "You are on Wayland. ueberzug needs X11, so album art shows through chafa here."
 fi
 if ! mpc status >/dev/null 2>&1; then
-	warn "Could not connect to MPD. ncmpcppv needs a running MPD, see README.md."
+	warn "Could not connect to MPD. ncmpcppv needs a running MPD."
 fi
